@@ -1,46 +1,50 @@
-import java.io.BufferedWriter;
+import javax.swing.*;
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
-import java.util.Scanner;
+import java.util.List;
 
 public class ProductReader {
     public static void main(String[] args) {
-        ArrayList<String> Products = new ArrayList<String>();
-        Scanner input = new Scanner(System.in);
+        JFileChooser fileChooser = new JFileChooser();
+        int result = fileChooser.showOpenDialog(null);
 
-        while (true) {
-            String ID = SafeInput.getNonZeroLenString(input, "What is the ID?");
-            String name = SafeInput.getNonZeroLenString(input, "What is the name?");
-            String description = SafeInput.getNonZeroLenString(input, "What is the description?");
-            double cost = SafeInput.getDouble(input, "What is the cost?");
+        if (result == JFileChooser.APPROVE_OPTION) {
+            java.io.File selectedFile = fileChooser.getSelectedFile();
+            String fileName = selectedFile.getAbsolutePath();
+            List<Product> Products = new ArrayList<>();
 
-            String data = ID + ", " + name + ", " + description + ", " + cost;
-            Products.add(data);
+            try (BufferedReader reader = new BufferedReader(new FileReader(fileName))) {
+                System.out.println("File Contents:");
+                String line;
 
-            boolean askUser = SafeInput.getYNConfirm(input, "Would you like to add another product to the file?");
-            if (askUser == false) {
-                break;
+                System.out.printf("%-10s %-15s %-30s %-30s%n", "ID#", "Name", "Description", "Cost");
+                System.out.println("================================================================");
+
+                while ((line = reader.readLine()) != null) {
+                    String[] data = line.split(", ");
+
+                    if (data.length == 4) {
+                        String ID = data[0];
+                        String name = data[1];
+                        String description = data[2];
+                        double cost = Double.valueOf(data[3]);
+
+                        Product products = new Product(ID, name, description, cost);
+
+                        Products.add(products);
+                    }
+                }
+
+                // Display
+                for (Product product : Products) {
+                    System.out.printf("%-10s %-15s %-30s %-30s%n", product.getID(), product.getName(), product.getDescription(), product.getCost());
+                }
             }
-        }
-
-        Path fileName = Path.of("ProductTestData.txt");
-
-        try {
-            BufferedWriter writer = Files.newBufferedWriter(fileName, StandardOpenOption.CREATE);
-
-            for (int i = 0; i < Products.size(); i++) {
-                writer.write(Products.get(i));
-                writer.newLine();
+            catch (IOException e) {
+                e.printStackTrace();
             }
-            writer.close();
-            System.out.println("Products saved to " + fileName);
-        }
-        catch (IOException e) {
-            e.printStackTrace();
         }
     }
 }
-
